@@ -28,3 +28,26 @@ functions:
           method: post
           cors: true
           integration: lambda
+  crear_bucket:
+    handler: crear_bucket.lambda_handler
+    events:
+      - http:
+          path: /s3/crear-bucket
+          method: post
+          cors: true
+
+  eliminar_objeto:
+    handler: eliminar_objeto.lambda_handler
+    events:
+      - http:
+          path: /s3/eliminar-objeto
+          method: delete
+          cors: true
+
+  generar_url_presignada:
+    handler: generar_url_presignada.lambda_handler
+    events:
+      - http:
+          path: /s3/presign-url
+          method: post
+          cors: true
