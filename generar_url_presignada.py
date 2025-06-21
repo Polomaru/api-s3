@@ -2,14 +2,20 @@ import json
 import boto3
 
 def lambda_handler(event, context):
-    # esperamos un JSON: { "bucket": "...", "key": "...", "expires": 3600 }
-    body = json.loads(event.get('body', '{}'))
-    bucket  = body.get('bucket')
-    key     = body.get('key')
-    expires = int(body.get('expires', 3600))  # segundos
-
-    if not bucket or not key:
-        return {'statusCode': 400, 'error': 'Faltan "bucket" o "key" en el body'}
+    # parseamos el body entrante
+    try:
+        body = json.loads(event.get('body', '{}'))
+        bucket  = body['bucket']
+        key     = body['key']
+        expires = int(body.get('expires', 3600))
+    except (json.JSONDecodeError, KeyError, ValueError):
+        return {
+            'statusCode': 400,
+            'headers': {'Content-Type': 'application/json'},
+            'body': json.dumps({
+                'error': 'Debe enviar JSON con "bucket", "key" y opcionalmente "expires" (int)'
+            })
+        }
 
     s3 = boto3.client('s3')
     try:
@@ -19,10 +25,17 @@ def lambda_handler(event, context):
             ExpiresIn=expires
         )
     except Exception as e:
-        return {'statusCode': 500, 'error': str(e)}
+        return {
+            'statusCode': 500,
+            'headers': {'Content-Type': 'application/json'},
+            'body': json.dumps({'error': str(e)})
+        }
 
     return {
         'statusCode': 200,
-        'presigned_url': url,
-        'expires_in': expires
+        'headers': {'Content-Type': 'application/json'},
+        'body': json.dumps({
+            'presigned_url': url,
+            'expires_in': expires
+        })
     }
